@@ -399,7 +399,10 @@ function userCardHtml(userDoc) {
 
       <div class="user-actions">
         <button class="btn-primary btn-connect" type="button" data-connect="${escapeHtml(userDoc.id || "")}">
-          Connect & Exchange
+          <i class="fa-solid fa-handshake"></i> Connect &amp; Exchange
+        </button>
+        <button class="btn-secondary" type="button" data-message="${escapeHtml(userDoc.id || "")}" data-message-name="${escapeHtml(userDoc.name || 'Member')}" style="padding: 10px 16px;">
+          <i class="fa-regular fa-comment"></i> Message
         </button>
       </div>
     </article>
@@ -536,36 +539,67 @@ async function loadBrowseUsers() {
   }
 
   grid.addEventListener("click", async (e) => {
-    const btn = e.target?.closest?.("[data-connect]");
-    if (!btn) return;
+    // --- Connect & Exchange ---
+    const connectBtn = e.target?.closest?.("[data-connect]");
+    // --- Message ---
+    const msgBtn = e.target?.closest?.("[data-message]");
 
+    if (!connectBtn && !msgBtn) return;
+
+    if (!fb.ready) { location.href = "login.html"; return; }
+    const { auth, db, api } = fb;
+    const user = auth.currentUser;
+    if (!user) { location.href = "login.html"; return; }
+
+    // ---- Message button ----
+    if (msgBtn) {
+      const targetUid = msgBtn.getAttribute("data-message");
+      const targetName = msgBtn.getAttribute("data-message-name") || "Member";
+      if (!targetUid || user.uid === targetUid) return;
+
+      msgBtn.setAttribute("disabled", "");
+      msgBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening...';
+
+      try {
+        const ids = [user.uid, targetUid].sort();
+        const chatId = ids.join("_");
+        const chatRef = api.doc(db, "chats", chatId);
+        const chatSnap = await api.getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+          await api.setDoc(chatRef, {
+            participants: ids,
+            participantNames: {
+              [user.uid]: user.displayName || "Member",
+              [targetUid]: targetName,
+            },
+            lastMessage: "",
+            lastUpdated: api.serverTimestamp(),
+          });
+        }
+
+        location.href = `messages.html?chat=${chatId}`;
+      } catch (err) {
+        console.error("Failed to open chat:", err);
+        msgBtn.innerHTML = '<i class="fa-regular fa-comment"></i> Message';
+        msgBtn.removeAttribute("disabled");
+        alert("Could not open chat: " + err.message);
+      }
+      return;
+    }
+
+    // ---- Connect & Exchange button ----
+    const btn = connectBtn;
     const targetUid = btn.getAttribute("data-connect") || "";
     if (!targetUid) return;
 
-    if (!fb.ready) {
-      alert("Firebase not configured. Redirecting to login simulation.");
-      location.href = "login.html";
-      return;
-    }
-
-    const { auth, db, api } = fb;
-    const user = auth.currentUser;
-
-    if (!user) {
-      location.href = "login.html";
-      return;
-    }
-
-    if (user.uid === targetUid) {
-      alert("You cannot connect with yourself.");
-      return;
-    }
+    if (user.uid === targetUid) { alert("You cannot connect with yourself."); return; }
 
     const targetUser = state.all.find((u) => u.id === targetUid);
     if (!targetUser) return;
 
     btn.setAttribute("disabled", "");
-    btn.textContent = "Connecting...";
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
 
     try {
       const q = api.query(
@@ -576,7 +610,7 @@ async function loadBrowseUsers() {
       const snap = await api.getDocs(q);
 
       if (!snap.empty) {
-        btn.textContent = "Already Requested";
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Already Requested';
         btn.classList.add("btn-secondary");
         return;
       }
@@ -591,7 +625,6 @@ async function loadBrowseUsers() {
         createdAt: api.serverTimestamp(),
       });
 
-      // Send notification
       await api.addDoc(api.collection(db, "notifications"), {
         uid: targetUid,
         type: "request",
@@ -601,12 +634,12 @@ async function loadBrowseUsers() {
         createdAt: api.serverTimestamp(),
       });
 
-      btn.textContent = "Sent!";
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Sent!';
       btn.style.background = "var(--success, #10b981)";
       btn.style.borderColor = "var(--success, #10b981)";
     } catch (err) {
       console.error("Connection request failed:", err);
-      btn.textContent = "Error";
+      btn.innerHTML = '<i class="fa-solid fa-handshake"></i> Connect &amp; Exchange';
       btn.removeAttribute("disabled");
       alert("Failed to send request: " + (err.message || "Unknown error"));
     }
@@ -1382,6 +1415,13 @@ async function loadMessagesPage() {
         const snap = await api.getDocs(q);
         const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         renderChatList(chats);
+
+        // Auto-open chat from URL param (e.g. messages.html?chat=uid1_uid2)
+        const paramChatId = getParam("chat");
+        if (paramChatId) {
+          // Ensure it's in the list, or open anyway
+          setTimeout(() => openChat(paramChatId), 100);
+        }
       } catch (err) {
         console.error("Error fetching chats:", err);
       }
