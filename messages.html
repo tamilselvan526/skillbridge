@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages | SkillBridge</title>
+  <meta name="description" content="Chat with other SkillBridge members." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-navbar"></div>
+
+  <main class="container page">
+    <div class="chat-container glass-panel">
+      <!-- Sidebar: List of conversations -->
+      <aside class="chat-sidebar">
+        <header class="sidebar-header">
+          <h2>Messages</h2>
+        </header>
+        <div id="chat-list" class="chat-list">
+          <div class="loading-state">Loading chats...</div>
+        </div>
+      </aside>
+
+      <!-- Main Panel: Active chat window -->
+      <section class="chat-main" id="chat-main">
+        <div id="chat-empty" class="chat-empty">
+          <i class="fa-regular fa-comments"></i>
+          <p>Select a connection to start messaging</p>
+        </div>
+
+        <div id="chat-window" class="chat-window" hidden>
+          <header class="chat-header">
+            <div class="chat-user-info">
+              <span class="avatar" id="active-chat-avatar">?</span>
+              <h3 id="active-chat-name">User Name</h3>
+            </div>
+          </header>
+
+          <div id="messages-feed" class="messages-feed">
+            <!-- Messages will be injected here -->
+          </div>
+
+          <form id="message-form" class="message-composer">
+            <input type="text" id="message-input" placeholder="Type a message..." required autocomplete="off" />
+            <button type="submit" class="btn-primary" aria-label="Send message">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Skills | SkillBridge</title>
+  <meta name="description" content="Browse people and skills on SkillBridge with search and categories." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-navbar"></div>
+
+  <main class="container page">
+    <header class="page-header">
+      <div>
+        <h1>Browse Skills</h1>
+        <p class="muted">Search by skill or name, then connect to exchange.</p>
+      </div>
+    </header>
+
+    <section class="glass-panel toolbar">
+      <div class="browse-bar">
+        <div class="field">
+          <label for="search">Search</label>
+          <input id="search" class="input" placeholder="Search by skill, name, or location..." />
+        </div>
+        <div class="chips" aria-label="Categories">
+          <button class="chip active" type="button" data-cat="All">All</button>
+          <button class="chip" type="button" data-cat="Tech">Tech</button>
+          <button class="chip" type="button" data-cat="Music">Music</button>
+          <button class="chip" type="button" data-cat="Business">Business</button>
+          <button class="chip" type="button" data-cat="Fitness">Fitness</button>
+          <button class="chip" type="button" data-cat="Design">Design</button>
+          <button class="chip" type="button" data-cat="Language">Language</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid cards users" id="users-grid" aria-live="polite"></section>
+    <section class="empty-state glass-panel" id="users-empty" hidden>
+      <h2>No results</h2>
+      <p class="muted">Try a different search or loosen your filters.</p>
+      <a class="btn-secondary" href="explore.html">Go to Explore</a>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
+

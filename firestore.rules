@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Auth helper
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Users: Anyone authed can read, only owner can write
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Skills: Authenticated read, owner write
+    match /skills/{skillId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Requests: Participants read, requester creates, recipient updates status
+    match /requests/{requestId} {
+      allow read: if isSignedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.toUid == request.auth.uid 
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if false; 
+    }
+
+    // Chats: Only participants in the array can read/write
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participants;
+      
+      // Messages sub-collection: Inherit participant check via parent document or explicit participants array check
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+
+    // Notifications: Only recipient can read/update
+    match /notifications/{notifId} {
+      allow read, update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn(); // Allow system or other users to send notifications
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Ratings: Authenticated read, requester can create unique rating per exchange
+    match /ratings/{ratingId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() 
+                    && request.resource.data.fromUid == request.auth.uid
+                    && !exists(/databases/$(database)/documents/ratings/$(request.resource.data.fromUid + '_' + request.resource.data.exchangeId));
+      allow update, delete: if false;
+    }
+  }
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile | SkillBridge</title>
+  <meta name="description" content="Your SkillBridge profile." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-navbar"></div>
+
+  <main class="container page">
+    <div id="profile-wrap">
+      <section class="profile-shell glass-panel">
+        <header class="profile-header">
+          <div class="profile-avatar" aria-hidden="true">
+            <div class="avatar xl" id="profile-avatar">M</div>
+          </div>
+
+          <div class="profile-head-meta">
+            <h1 id="profile-name-display">Member</h1>
+            <div class="profile-sub muted">
+              <span><i class="fa-solid fa-location-dot"></i> <span id="profile-loc-display">Remote</span></span>
+            </div>
+            <p class="profile-bio muted" id="profile-bio-display">
+              Add a short bio to help people understand what you teach.
+            </p>
+          </div>
+
+          <div class="profile-cta">
+            <a class="btn-secondary" href="offer.html"><i class="fa-solid fa-plus"></i> Offer Your Skill</a>
+          </div>
+        </header>
+
+        <section class="profile-sections">
+          <div class="profile-grid">
+            <section class="glass-panel profile-panel">
+              <h2><i class="fa-solid fa-gift"></i> Skills Offered</h2>
+              <div class="chips" id="skills-offered-view">
+                <span class="chip muted">Shown after you save</span>
+              </div>
+            </section>
+
+            <section class="glass-panel profile-panel">
+              <h2><i class="fa-solid fa-graduation-cap"></i> Skills Wanted</h2>
+              <div class="chips" id="skills-wanted-view">
+                <span class="chip muted">Shown after you save</span>
+              </div>
+            </section>
+          </div>
+
+          <section class="glass-panel profile-panel">
+            <h2><i class="fa-regular fa-clock"></i> Availability</h2>
+            <div class="muted" id="availability-view">Add your availability.</div>
+          </section>
+
+          <section class="glass-panel profile-panel">
+            <div class="panel-head">
+              <h2><i class="fa-regular fa-pen-to-square"></i> Edit Profile</h2>
+              <div class="muted" id="profile-hint"></div>
+            </div>
+
+            <form id="profile-form" class="form">
+              <div class="grid-2">
+                <div class="field">
+                  <label for="p-name">Name</label>
+                  <input class="input" id="p-name" placeholder="Your name" required />
+                </div>
+                <div class="field">
+                  <label for="p-location">Location</label>
+                  <input class="input" id="p-location" placeholder="City, Country" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="p-bio">Bio</label>
+                <textarea class="input textarea" id="p-bio" rows="3" placeholder="What do you love teaching/learning?"></textarea>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="p-category">Primary Category</label>
+                  <select class="input" id="p-category">
+                    <option>Tech</option>
+                    <option>Music</option>
+                    <option>Business</option>
+                    <option>Fitness</option>
+                    <option>Design</option>
+                    <option>Language</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="p-experience">Experience</label>
+                  <input class="input" id="p-experience" placeholder="e.g., 2 yrs, Advanced" />
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="p-offered">Skill Offered</label>
+                  <input class="input" id="p-offered" placeholder="e.g., HTML/CSS/JS" />
+                </div>
+                <div class="field">
+                  <label for="p-wanted">Skill Wanted</label>
+                  <input class="input" id="p-wanted" placeholder="e.g., UI Design" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="p-availability">Availability</label>
+                <input class="input" id="p-availability" placeholder="e.g., Weekdays 7–9pm, Weekends" />
+              </div>
+
+              <div class="form-actions">
+                <button class="btn-primary" type="submit"><i class="fa-solid fa-check"></i> Save changes</button>
+              </div>
+            </form>
+          </section>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
+

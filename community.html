@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community | SkillBridge</title>
+  <meta name="description" content="Community space for SkillBridge." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-navbar"></div>
+
+  <main class="container page">
+    <header class="page-header">
+      <div>
+        <h1>Community</h1>
+        <p class="muted">A mini forum for questions, swaps, and progress updates.</p>
+      </div>
+    </header>
+
+    <section class="community">
+      <section class="glass-panel composer">
+        <form id="post-form" class="composer-row">
+          <div class="avatar">Y</div>
+          <div class="composer-main">
+            <textarea id="post-content" class="input textarea" rows="3" placeholder="Share something with the community..." required></textarea>
+            <div class="composer-actions">
+              <div class="muted" id="post-hint"></div>
+              <button class="btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Post</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="feed" id="posts-feed" aria-live="polite"></section>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
+

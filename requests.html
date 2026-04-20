@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Requests | SkillBridge</title>
+  <meta name="description" content="View and manage your skill exchange requests." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-navbar"></div>
+
+  <main class="container page">
+    <header class="page-header">
+      <div>
+        <h1>Skill Requests</h1>
+        <p class="muted">Manage your connections and skill swaps.</p>
+      </div>
+    </header>
+
+    <div class="profile-sections">
+      <section class="section">
+        <div class="section-header">
+          <h2>Incoming Requests</h2>
+          <p>People who want to learn from you.</p>
+        </div>
+        <div id="incoming-list" class="grid cards">
+          <!-- Incoming requests will be injected here -->
+        </div>
+        <div id="incoming-empty" class="empty-state glass-panel" hidden>
+          <p class="muted">No incoming requests at the moment.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2>Sent Requests</h2>
+          <p>Connections you've initiated.</p>
+        </div>
+        <div id="sent-list" class="grid cards">
+          <!-- Sent requests will be injected here -->
+        </div>
+        <div id="sent-empty" class="empty-state glass-panel" hidden>
+          <p class="muted">You haven't sent any requests yet.</p>
+          <a href="browse.html" class="btn-secondary">Browse Skills</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

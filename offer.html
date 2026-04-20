@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offer Your Skill | SkillBridge</title>
+  <meta name="description" content="Offer your skill and find exchange partners." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-navbar"></div>
+
+  <main class="container page">
+    <header class="page-header">
+      <div>
+        <h1>Offer Your Skill</h1>
+        <p class="muted">Share what you can teach and what you want to learn in exchange.</p>
+      </div>
+    </header>
+
+    <section class="center">
+      <div class="glass-panel form-card">
+        <form id="offer-form" class="form">
+          <div class="grid-2">
+            <div class="field">
+              <label for="offer-skill">Skill you’re offering</label>
+              <input class="input" id="offer-skill" placeholder="e.g., JavaScript, Guitar, Marketing" required />
+            </div>
+            <div class="field">
+              <label for="offer-category">Category</label>
+              <select class="input" id="offer-category">
+                <option>Tech</option>
+                <option>Music</option>
+                <option>Business</option>
+                <option>Fitness</option>
+                <option>Design</option>
+                <option>Language</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="offer-desc">Description</label>
+            <textarea class="input textarea" id="offer-desc" rows="4" placeholder="What will you teach? What’s your approach?" required></textarea>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="offer-want">Skill you want to learn</label>
+              <input class="input" id="offer-want" placeholder="e.g., UI Design, Python, Public speaking" />
+            </div>
+            <div class="field">
+              <label for="offer-exp">Experience level</label>
+              <input class="input" id="offer-exp" placeholder="e.g., Beginner, Intermediate, 3 yrs" />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="offer-availability">Availability</label>
+              <input class="input" id="offer-availability" placeholder="e.g., Weekends, 7–9pm weekdays" />
+            </div>
+            <div class="field">
+              <label for="offer-location">Location</label>
+              <input class="input" id="offer-location" placeholder="City (or leave blank for online)" />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-primary" id="offer-submit" type="submit">
+              <i class="fa-solid fa-paper-plane"></i>
+              Publish
+            </button>
+          </div>
+
+          <div class="muted" id="offer-hint"></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
+
