@@ -32,9 +32,19 @@ service cloud.firestore {
 
     // Chats: Only participants in the array can read/write
     match /chats/{chatId} {
-      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // Allow read even if doc doesn't exist (for existence checks)
+      // If it exists, user must be a participant
+      allow read: if isSignedIn() && (resource == null || request.auth.uid in resource.data.participants);
       
-      // Messages sub-collection: Inherit participant check via parent document or explicit participants array check
+      // Creating a new chat: user must be in the participants list
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participants;
+      
+      // Updating: user must be a participant
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participants;
+      
+      allow delete: if false;
+
+      // Messages sub-collection: only participants of the parent chat can read/write
       match /messages/{messageId} {
         allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }

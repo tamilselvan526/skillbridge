@@ -357,7 +357,7 @@ function skillCardHtml(skill) {
   `;
 }
 
-function userCardHtml(userDoc) {
+function userCardHtml(userDoc, connectionStatus = null) {
   const name = escapeHtml(userDoc.name || "Member");
   const location = escapeHtml(userDoc.location || "Remote");
   const offer = escapeHtml(userDoc.skillOffered || userDoc.skillsOffered || userDoc.skills || "—");
@@ -365,6 +365,26 @@ function userCardHtml(userDoc) {
   const exp = escapeHtml(userDoc.experience || "—");
   const avatarUrl = userDoc.photoURL || userDoc.avatarUrl || "";
   const category = escapeHtml(userDoc.category || "All");
+
+  let connectBtnHtml = `
+    <button class="btn-primary btn-connect" type="button" data-connect="${escapeHtml(userDoc.id || "")}">
+      <i class="fa-solid fa-handshake"></i> Connect &amp; Exchange
+    </button>
+  `;
+
+  if (connectionStatus === "accepted") {
+    connectBtnHtml = `
+      <button class="btn-success" type="button" disabled style="width: 100%; justify-content: center; background: #10b981; border-color: #10b981; color: white; cursor: default;">
+        <i class="fa-solid fa-check"></i> Connected
+      </button>
+    `;
+  } else if (connectionStatus === "pending") {
+    connectBtnHtml = `
+      <button class="btn-secondary" type="button" disabled style="width: 100%; justify-content: center; cursor: default; opacity: 0.8;">
+        <i class="fa-solid fa-clock"></i> Request Sent
+      </button>
+    `;
+  }
 
   return `
     <article class="glass-panel user-card">
@@ -398,10 +418,8 @@ function userCardHtml(userDoc) {
       </div>
 
       <div class="user-actions">
-        <button class="btn-primary btn-connect" type="button" data-connect="${escapeHtml(userDoc.id || "")}">
-          <i class="fa-solid fa-handshake"></i> Connect &amp; Exchange
-        </button>
-        <button class="btn-secondary" type="button" data-message="${escapeHtml(userDoc.id || "")}" data-message-name="${escapeHtml(userDoc.name || 'Member')}" style="padding: 10px 16px;">
+        ${connectBtnHtml}
+        <button class="btn-secondary" type="button" data-message="${escapeHtml(userDoc.id || "")}" data-message-name="${escapeHtml(userDoc.name || 'Member')}" style="padding: 10px 16px; width: 100%; margin-top: 8px; justify-content: center;">
           <i class="fa-regular fa-comment"></i> Message
         </button>
       </div>
@@ -491,7 +509,7 @@ async function loadBrowseUsers() {
   const qInput = $("#search");
   const chips = $all("[data-cat]");
 
-  const state = { all: [], cat: getParam("category") || "All" };
+  const state = { all: [], connections: {}, cat: getParam("category") || "All" };
 
   const setCat = (cat) => {
     state.cat = cat;
@@ -517,7 +535,7 @@ async function loadBrowseUsers() {
       return name.includes(q) || offer.includes(q) || want.includes(q) || loc.includes(q);
     });
 
-    grid.innerHTML = filtered.map(userCardHtml).join("");
+    grid.innerHTML = filtered.map(u => userCardHtml(u, state.connections[u.id])).join("");
     empty?.toggleAttribute("hidden", filtered.length !== 0);
     renderRatings(filtered);
   }
@@ -531,9 +549,52 @@ async function loadBrowseUsers() {
       return;
     }
 
-    const { db, api } = fb;
+    const { db, api, auth } = fb;
+    
+    // Initial fetch of users
     const snap = await api.getDocs(api.collection(db, "users"));
     state.all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    
+    // Fetch connections whenever auth state is known
+    let unsubRequestsIn = null;
+    let unsubRequestsOut = null;
+
+    api.onAuthStateChanged(auth, async (user) => {
+      if (unsubRequestsIn) unsubRequestsIn();
+      if (unsubRequestsOut) unsubRequestsOut();
+
+      if (user) {
+        try {
+          const qIn = api.query(api.collection(db, "requests"), api.where("toUid", "==", user.uid));
+          const qOut = api.query(api.collection(db, "requests"), api.where("fromUid", "==", user.uid));
+          
+          const process = (snapIn, snapOut) => {
+            const connections = {};
+            [...snapIn.docs, ...snapOut.docs].forEach(d => {
+              const data = d.data();
+              const otherUid = data.fromUid === user.uid ? data.toUid : data.fromUid;
+              if (!connections[otherUid] || data.status === 'accepted') {
+                connections[otherUid] = data.status;
+              }
+            });
+            state.connections = connections;
+            apply();
+          };
+
+          // Hold temporary snapshots to sync
+          let sIn = { docs: [] }, sOut = { docs: [] };
+          unsubRequestsIn = api.onSnapshot(qIn, (snap) => { sIn = snap; process(sIn, sOut); });
+          unsubRequestsOut = api.onSnapshot(qOut, (snap) => { sOut = snap; process(sIn, sOut); });
+
+        } catch (err) {
+          console.error("Failed to setup connection listeners:", err);
+        }
+      } else {
+        state.connections = {};
+        apply();
+      }
+    });
+
     setCat(state.cat);
     renderRatings(state.all);
   }
@@ -602,16 +663,20 @@ async function loadBrowseUsers() {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
 
     try {
-      const q = api.query(
-        api.collection(db, "requests"),
-        api.where("fromUid", "==", user.uid),
-        api.where("toUid", "==", targetUid)
-      );
-      const snap = await api.getDocs(q);
+      // Check both directions for any existing request
+      const q1 = api.query(api.collection(db, "requests"), api.where("fromUid", "==", user.uid), api.where("toUid", "==", targetUid));
+      const q2 = api.query(api.collection(db, "requests"), api.where("fromUid", "==", targetUid), api.where("toUid", "==", user.uid));
+      
+      const [snap1, snap2] = await Promise.all([api.getDocs(q1), api.getDocs(q2)]);
 
-      if (!snap.empty) {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Already Requested';
-        btn.classList.add("btn-secondary");
+      if (!snap1.empty || !snap2.empty) {
+        const existing = !snap1.empty ? snap1.docs[0].data() : snap2.docs[0].data();
+        if (existing.status === 'accepted') {
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Connected';
+        } else {
+          btn.innerHTML = '<i class="fa-solid fa-clock"></i> Already Pending';
+        }
+        btn.classList.replace("btn-primary", "btn-secondary");
         return;
       }
 
@@ -637,6 +702,9 @@ async function loadBrowseUsers() {
       btn.innerHTML = '<i class="fa-solid fa-check"></i> Sent!';
       btn.style.background = "var(--success, #10b981)";
       btn.style.borderColor = "var(--success, #10b981)";
+      
+      // Update local state immediately
+      state.connections[targetUid] = 'pending';
     } catch (err) {
       console.error("Connection request failed:", err);
       btn.innerHTML = '<i class="fa-solid fa-handshake"></i> Connect &amp; Exchange';
@@ -1402,6 +1470,130 @@ async function loadMessagesPage() {
   const { auth, db, api } = fb;
   let activeChatId = null;
   let unsubMessages = null;
+  let unsubChats = null;
+
+  function renderChatList(chats, user) {
+    if (chats.length === 0) {
+      chatList.innerHTML = '<div class="muted" style="padding: 20px; text-align: center;">No conversations yet.</div>';
+      return;
+    }
+
+    chatList.innerHTML = chats
+      .map((chat) => {
+        const otherUid = chat.participants.find((id) => id !== user.uid);
+        const name = chat.participantNames?.[otherUid] || "Member";
+        return `
+        <div class="chat-item ${chat.id === activeChatId ? "active" : ""}" data-chat-id="${chat.id}">
+          <div class="avatar small">${name.charAt(0).toUpperCase()}</div>
+          <div class="chat-item-info">
+            <div class="chat-item-name">${escapeHtml(name)}</div>
+            <div class="chat-item-last">${escapeHtml(chat.lastMessage || "No messages yet")}</div>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+  }
+
+  async function openChat(chatId, user) {
+    if (unsubMessages) unsubMessages();
+    activeChatId = chatId;
+
+    chatEmpty.setAttribute("hidden", "");
+    chatWindow.removeAttribute("hidden");
+
+    const items = chatList.querySelectorAll(".chat-item");
+    items.forEach((it) => it.classList.toggle("active", it.dataset.chatId === chatId));
+
+    const activeItem = chatList.querySelector(`[data-chat-id="${chatId}"]`);
+    if (activeItem) {
+      $("#active-chat-name").textContent = activeItem.querySelector(".chat-item-name").textContent;
+      $("#active-chat-avatar").textContent = activeItem.querySelector(".avatar").textContent;
+    } else {
+      try {
+        const snap = await api.getDoc(api.doc(db, "chats", chatId));
+        if (snap.exists()) {
+          const data = snap.data();
+          const otherUid = data.participants.find(id => id !== user.uid);
+          const name = data.participantNames?.[otherUid] || "Member";
+          $("#active-chat-name").textContent = name;
+          $("#active-chat-avatar").textContent = name.charAt(0).toUpperCase();
+        }
+      } catch (e) {
+        console.error("Failed to fetch chat details:", e);
+      }
+    }
+
+    const mq = api.query(api.collection(db, `chats/${chatId}/messages`), api.orderBy("timestamp", "asc"));
+    unsubMessages = api.onSnapshot(mq, (snap) => {
+      const messages = snap.docs.map((d) => d.data());
+      renderMessages(messages, user);
+    });
+  }
+
+  function renderMessages(list, user) {
+    msgFeed.innerHTML = list
+      .map((m) => {
+        let timeStr = "";
+        if (m.timestamp) {
+          const date = m.timestamp.seconds ? new Date(m.timestamp.seconds * 1000) : (m.timestamp.toDate ? m.timestamp.toDate() : new Date(m.timestamp));
+          timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+        return `
+          <div class="msg ${m.senderId === user.uid ? "sent" : "received"}">
+            <div>${escapeHtml(m.text)}</div>
+            ${timeStr ? `<span class="msg-time">${timeStr}</span>` : ""}
+          </div>
+        `;
+      })
+      .join("");
+    msgFeed.scrollTop = msgFeed.scrollHeight;
+  }
+
+  chatList.addEventListener("click", (e) => {
+    const item = e.target.closest(".chat-item");
+    const user = auth.currentUser;
+    if (item && user) {
+      openChat(item.dataset.chatId, user);
+    }
+  });
+
+  msgForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+    const text = msgInput.value.trim();
+    if (!text || !activeChatId || !user) return;
+
+    msgInput.value = "";
+    try {
+      await api.addDoc(api.collection(db, `chats/${activeChatId}/messages`), {
+        senderId: user.uid,
+        text: text,
+        timestamp: api.serverTimestamp(),
+      });
+
+      await api.updateDoc(api.doc(db, "chats", activeChatId), {
+        lastMessage: text,
+        lastUpdated: api.serverTimestamp(),
+      });
+
+      const snap = await api.getDoc(api.doc(db, "chats", activeChatId));
+      if (snap.exists()) {
+        const chatData = snap.data();
+        const otherUid = chatData.participants.find((id) => id !== user.uid);
+        await api.addDoc(api.collection(db, "notifications"), {
+          uid: otherUid,
+          type: "message",
+          message: `New message from ${user.displayName || "Member"}`,
+          refId: activeChatId,
+          read: false,
+          createdAt: api.serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      console.error("Send failed:", err);
+    }
+  });
 
   api.onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -1409,136 +1601,22 @@ async function loadMessagesPage() {
       return;
     }
 
-    const fetchChats = async () => {
-      try {
-        const q = api.query(api.collection(db, "chats"), api.where("participants", "array-contains", user.uid));
-        const snap = await api.getDocs(q);
-        const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderChatList(chats);
+    if (unsubChats) unsubChats();
 
-        // Auto-open chat from URL param (e.g. messages.html?chat=uid1_uid2)
-        const paramChatId = getParam("chat");
-        if (paramChatId) {
-          // Ensure it's in the list, or open anyway
-          setTimeout(() => openChat(paramChatId), 100);
-        }
-      } catch (err) {
-        console.error("Error fetching chats:", err);
+    const q = api.query(api.collection(db, "chats"), api.where("participants", "array-contains", user.uid), api.orderBy("lastUpdated", "desc"));
+    
+    unsubChats = api.onSnapshot(q, (snap) => {
+      const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderChatList(chats, user);
+
+      const paramChatId = getParam("chat");
+      if (paramChatId && !activeChatId) {
+        setTimeout(() => openChat(paramChatId, user), 100);
       }
-    };
-
-    function renderChatList(chats) {
-      if (chats.length === 0) {
-        chatList.innerHTML = '<div class="muted" style="padding: 20px; text-align: center;">No conversations yet.</div>';
-        return;
-      }
-
-      chatList.innerHTML = chats
-        .map((chat) => {
-          const otherUid = chat.participants.find((id) => id !== user.uid);
-          const name = chat.participantNames?.[otherUid] || "Member";
-          return `
-          <div class="chat-item ${chat.id === activeChatId ? "active" : ""}" data-chat-id="${chat.id}">
-            <div class="avatar small">${name.charAt(0).toUpperCase()}</div>
-            <div class="chat-item-info">
-              <div class="chat-item-name">${escapeHtml(name)}</div>
-              <div class="chat-item-last">${escapeHtml(chat.lastMessage || "No messages yet")}</div>
-            </div>
-          </div>
-        `;
-        })
-        .join("");
-    }
-
-    function openChat(chatId) {
-      if (unsubMessages) unsubMessages();
-      activeChatId = chatId;
-
-      chatEmpty.setAttribute("hidden", "");
-      chatWindow.removeAttribute("hidden");
-
-      const items = chatList.querySelectorAll(".chat-item");
-      items.forEach((it) => it.classList.toggle("active", it.dataset.chatId === chatId));
-
-      const activeItem = chatList.querySelector(`[data-chat-id="${chatId}"]`);
-      if (activeItem) {
-        $("#active-chat-name").textContent = activeItem.querySelector(".chat-item-name").textContent;
-        $("#active-chat-avatar").textContent = activeItem.querySelector(".avatar").textContent;
-      }
-
-      const q = api.query(api.collection(db, `chats/${chatId}/messages`), api.orderBy("timestamp", "asc"));
-      unsubMessages = api.onSnapshot(q, (snap) => {
-        const messages = snap.docs.map((d) => d.data());
-        renderMessages(messages);
-      });
-    }
-
-    function renderMessages(list) {
-      msgFeed.innerHTML = list
-        .map(
-          (m) => `
-        <div class="msg ${m.senderId === user.uid ? "sent" : "received"}">
-          <div>${escapeHtml(m.text)}</div>
-          ${
-            m.timestamp
-              ? `<span class="msg-time">${new Date(m.timestamp.seconds * 1000).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}</span>`
-              : ""
-          }
-        </div>
-      `
-        )
-        .join("");
-      msgFeed.scrollTop = msgFeed.scrollHeight;
-    }
-
-    chatList.addEventListener("click", (e) => {
-      const item = e.target.closest(".chat-item");
-      if (item) {
-        openChat(item.dataset.chatId);
-      }
+    }, (err) => {
+      console.error("Chats listener failed:", err);
+      chatList.innerHTML = '<div class="muted" style="padding: 20px; text-align: center;">Error loading chats.</div>';
     });
-
-    msgForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const text = msgInput.value.trim();
-      if (!text || !activeChatId) return;
-
-      msgInput.value = "";
-      try {
-        await api.addDoc(api.collection(db, `chats/${activeChatId}/messages`), {
-          senderId: user.uid,
-          text: text,
-          timestamp: api.serverTimestamp(),
-        });
-
-        await api.updateDoc(api.doc(db, "chats", activeChatId), {
-          lastMessage: text,
-          lastUpdated: api.serverTimestamp(),
-        });
-
-        // Send notification to other participant
-        const snap = await api.getDoc(api.doc(db, "chats", activeChatId));
-        if (snap.exists()) {
-          const chatData = snap.data();
-          const otherUid = chatData.participants.find((id) => id !== user.uid);
-          await api.addDoc(api.collection(db, "notifications"), {
-            uid: otherUid,
-            type: "message",
-            message: `New message from ${user.displayName || "Member"}`,
-            refId: activeChatId,
-            read: false,
-            createdAt: api.serverTimestamp(),
-          });
-        }
-      } catch (err) {
-        console.error("Send failed:", err);
-      }
-    });
-
-    await fetchChats();
   });
 }
 
