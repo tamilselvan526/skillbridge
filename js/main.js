@@ -370,7 +370,7 @@ function userCardHtml(userDoc, connectionStatus = null) {
     </button>
   `;
 
-  if (connectionStatus === "accepted") {
+  if (connectionStatus === "accepted" || connectionStatus === "completed") {
     connectBtnHtml = `
       <button class="btn-success" type="button" disabled style="width: 100%; justify-content: center; background: #10b981; border-color: #10b981; color: white; cursor: default;">
         <i class="fa-solid fa-check"></i> Connected
@@ -561,7 +561,7 @@ async function loadBrowseUsers() {
             [...snapIn.docs, ...snapOut.docs].forEach(d => {
               const data = d.data();
               const otherUid = data.fromUid === user.uid ? data.toUid : data.fromUid;
-              if (!connections[otherUid] || data.status === 'accepted') {
+              if (!connections[otherUid] || data.status === 'accepted' || data.status === 'completed') {
                 connections[otherUid] = data.status;
               }
             });
