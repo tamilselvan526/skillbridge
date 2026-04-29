@@ -74,7 +74,6 @@ function renderNavbar() {
         <div class="nav-links" id="nav-links">
           <a data-nav href="index.html">Home</a>
           <a data-nav href="browse.html">Browse</a>
-          <a data-nav href="explore.html">Explore</a>
           <a data-nav href="community.html">Community</a>
           <a data-nav href="offer.html">Offer</a>
           <a data-nav href="requests.html">Requests</a>
@@ -444,11 +443,6 @@ async function loadCounts() {
   }
 }
 
-async function loadExplore() {
-  // Explore page is static (trending, popular users, categories) – see loadExplorePage()
-  return;
-}
-
 async function loadBrowse() {
   // Browse Skills page (users) – see loadBrowseUsers()
   return;
@@ -743,60 +737,6 @@ async function renderRatings(users) {
   }
 }
 
-async function loadExplorePage() {
-  const trending = $("#trending-grid");
-  const popular = $("#popular-grid");
-  const cats = $("#categories-grid");
-  if (!trending && !popular && !cats) return;
-
-  const trendingItems = [
-    { title: "JavaScript Mentorship", icon: "fa-brands fa-js", category: "Tech" },
-    { title: "Guitar Chords", icon: "fa-solid fa-guitar", category: "Music" },
-    { title: "Personal Branding", icon: "fa-solid fa-briefcase", category: "Business" },
-    { title: "Yoga Basics", icon: "fa-solid fa-person-walking", category: "Fitness" },
-  ];
-
-  const categories = [
-    { name: "Tech", icon: "fa-solid fa-laptop-code" },
-    { name: "Music", icon: "fa-solid fa-music" },
-    { name: "Design", icon: "fa-solid fa-pen-nib" },
-    { name: "Business", icon: "fa-solid fa-chart-simple" },
-    { name: "Fitness", icon: "fa-solid fa-dumbbell" },
-    { name: "Language", icon: "fa-solid fa-language" },
-  ];
-
-  trending && (trending.innerHTML = trendingItems.map((t) => `
-    <a class="glass-panel mini-card" href="browse.html?category=${encodeURIComponent(t.category)}">
-      <div class="mini-icon"><i class="${t.icon}"></i></div>
-      <div class="mini-title">${escapeHtml(t.title)}</div>
-      <div class="mini-sub muted">${escapeHtml(t.category)}</div>
-    </a>
-  `).join(""));
-
-  // Popular users (static, or Firestore if ready)
-  let users = staticUsers();
-  if (fb.ready) {
-    const { db, api } = fb;
-    const snap = await api.getDocs(api.collection(db, "users"));
-    users = snap.docs.slice(0, 6).map((d) => ({ id: d.id, ...d.data() }));
-  }
-  popular && (popular.innerHTML = users.slice(0, 6).map((u) => `
-    <a class="glass-panel mini-user" href="browse.html">
-      <div class="avatar">${escapeHtml((u.name || "M").charAt(0).toUpperCase())}</div>
-      <div>
-        <div class="mini-title">${escapeHtml(u.name || "Member")}</div>
-        <div class="mini-sub muted">${escapeHtml(u.category || "All")} • ${escapeHtml(u.location || "Remote")}</div>
-      </div>
-    </a>
-  `).join(""));
-
-  cats && (cats.innerHTML = categories.map((c) => `
-    <a class="glass-panel cat-card" href="browse.html?category=${encodeURIComponent(c.name)}">
-      <div class="cat-icon"><i class="${c.icon}"></i></div>
-      <div class="cat-name">${escapeHtml(c.name)}</div>
-    </a>
-  `).join(""));
-}
 
 function formatTime(ts) {
   try {
@@ -1631,10 +1571,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await Promise.all([
     loadCounts(),
-    loadExplore(),
     loadBrowse(),
     loadBrowseUsers(),
-    loadExplorePage(),
     loadCommunityPage(),
     loadOfferPage(),
     loadProfilePage(),
