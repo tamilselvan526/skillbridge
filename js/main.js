@@ -618,6 +618,11 @@ async function loadBrowseUsers() {
       const targetName = msgBtn.getAttribute("data-message-name") || "Member";
       if (!targetUid || user.uid === targetUid) return;
 
+      if (state.connections[targetUid] !== "accepted") {
+        alert("First connect with person then click the message.");
+        return;
+      }
+
       msgBtn.setAttribute("disabled", "");
       msgBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening...';
 
