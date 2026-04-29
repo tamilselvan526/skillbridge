@@ -606,7 +606,8 @@ async function loadBrowseUsers() {
       const targetName = msgBtn.getAttribute("data-message-name") || "Member";
       if (!targetUid || user.uid === targetUid) return;
 
-      if (state.connections[targetUid] !== "accepted") {
+      const conn = state.connections[targetUid];
+      if (conn !== "accepted" && conn !== "completed") {
         alert("First connect with person then click the message.");
         return;
       }
