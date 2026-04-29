@@ -1249,19 +1249,22 @@ async function loadRequestsPage() {
       return;
     }
 
+    let incoming = [];
+    let sent = [];
+
     const fetchRequests = async () => {
       try {
         // Fetch incoming
         const qIn = api.query(api.collection(db, "requests"), api.where("toUid", "==", user.uid));
         const snapIn = await api.getDocs(qIn);
-        const incoming = snapIn.docs
+        incoming = snapIn.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
         // Fetch sent
         const qOut = api.query(api.collection(db, "requests"), api.where("fromUid", "==", user.uid));
         const snapOut = await api.getDocs(qOut);
-        const sent = snapOut.docs
+        sent = snapOut.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
