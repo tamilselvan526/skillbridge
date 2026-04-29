@@ -1291,6 +1291,22 @@ async function loadRequestsPage() {
 
       try {
         await api.updateDoc(api.doc(db, "requests", id), { status });
+        
+        // Add notification for the sender
+        const req = incoming.find(r => r.id === id);
+        if (req && (status === "accepted" || status === "completed")) {
+          await api.addDoc(api.collection(db, "notifications"), {
+            uid: req.fromUid,
+            type: "request",
+            message: status === "accepted" 
+              ? `${user.displayName || "Someone"} accepted your connection request!` 
+              : `${user.displayName || "Someone"} marked your exchange as complete!`,
+            refId: id,
+            read: false,
+            createdAt: api.serverTimestamp(),
+          });
+        }
+
         if (status === "completed") {
           showRatingForm(id);
         } else {
@@ -1311,6 +1327,20 @@ async function loadRequestsPage() {
 
       try {
         await api.updateDoc(api.doc(db, "requests", completeId), { status: "completed" });
+        
+        // Add notification for the receiver
+        const req = sent.find(r => r.id === completeId);
+        if (req) {
+          await api.addDoc(api.collection(db, "notifications"), {
+            uid: req.toUid,
+            type: "request",
+            message: `${user.displayName || "Someone"} marked the exchange as complete!`,
+            refId: completeId,
+            read: false,
+            createdAt: api.serverTimestamp(),
+          });
+        }
+
         showRatingForm(completeId);
       } catch (err) {
         alert("Operation failed: " + err.message);
