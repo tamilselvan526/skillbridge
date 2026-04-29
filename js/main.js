@@ -1127,12 +1127,13 @@ function initNotifications(user) {
   const q = api.query(
     api.collection(db, "notifications"),
     api.where("uid", "==", user.uid),
-    api.orderBy("createdAt", "desc"),
-    api.limit(10)
+    api.limit(20)
   );
 
   api.onSnapshot(q, (snap) => {
-    const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const all = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     const unreadCount = all.filter((n) => !n.read).length;
 
     badge.textContent = unreadCount;
@@ -1155,6 +1156,8 @@ function initNotifications(user) {
         )
         .join("");
     }
+  }, (err) => {
+    console.error("Notifications listener failed:", err);
   });
 
   list.addEventListener("click", async (e) => {
