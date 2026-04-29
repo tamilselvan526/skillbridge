@@ -993,3 +993,43 @@ code {
 }
 .rating-form h4 { margin-bottom: 10px; font-size: 0.95rem; }
 .rating-form textarea { margin: 10px 0; font-size: 0.9rem; min-height: 80px; }
+
+/* Reviews & Ratings */
+.reviews-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+.review-item {
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.review-author {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.review-stars {
+  color: #7b61ff;
+  font-size: 0.85rem;
+}
+.review-stars i.off {
+  color: rgba(255, 255, 255, 0.2);
+}
+.review-comment {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+.review-date {
+  font-size: 0.8rem;
+  margin-top: 8px;
+}

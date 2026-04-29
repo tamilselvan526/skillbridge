@@ -1132,6 +1132,49 @@ async function loadProfilePage() {
       category: data.category || "Tech",
       experience: data.experience || "",
     });
+
+    loadProfileReviews(user.uid);
+  }
+
+  async function loadProfileReviews(uid) {
+    const list = $("#profile-reviews-list");
+    const section = $("#profile-reviews-section");
+    if (!list || !section) return;
+
+    const q = api.query(api.collection(db, "ratings"), api.where("toUid", "==", uid), api.orderBy("createdAt", "desc"));
+    
+    api.onSnapshot(q, async (snap) => {
+      const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      if (reviews.length === 0) {
+        section.setAttribute("hidden", "");
+        return;
+      }
+
+      section.removeAttribute("hidden");
+      
+      // Fetch reviewer names
+      const reviewerIds = [...new Set(reviews.map(r => r.fromUid))];
+      const reviewerNames = {};
+      
+      for (const rid of reviewerIds) {
+        const rsnap = await api.getDoc(api.doc(db, "users", rid));
+        if (rsnap.exists()) reviewerNames[rid] = rsnap.data().name || "Member";
+      }
+
+      list.innerHTML = reviews.map(r => `
+        <div class="review-item">
+          <div class="review-head">
+            <div class="review-author">${escapeHtml(reviewerNames[r.fromUid] || "Member")}</div>
+            <div class="review-stars">
+              ${Array.from({ length: 5 }).map((_, i) => `<i class="fa-solid fa-star ${i < r.stars ? "" : "off"}"></i>`).join("")}
+            </div>
+          </div>
+          <p class="review-comment">${escapeHtml(r.comment)}</p>
+          <div class="review-date muted">${formatTime(r.createdAt)}</div>
+        </div>
+      `).join("");
+    });
   }
 
   function wireForm() {
