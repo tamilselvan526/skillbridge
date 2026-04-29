@@ -76,7 +76,6 @@ function renderNavbar() {
           <a data-nav href="browse.html">Browse</a>
           <a data-nav href="explore.html">Explore</a>
           <a data-nav href="community.html">Community</a>
-          <a data-nav href="featured.html">Featured</a>
           <a data-nav href="offer.html">Offer</a>
           <a data-nav href="requests.html">Requests</a>
           <a data-nav href="messages.html">Messages</a>
@@ -447,11 +446,6 @@ async function loadCounts() {
 
 async function loadExplore() {
   // Explore page is static (trending, popular users, categories) – see loadExplorePage()
-  return;
-}
-
-async function loadFeatured() {
-  // Featured page – see loadFeaturedPage()
   return;
 }
 
@@ -936,53 +930,6 @@ async function loadCommunityPage() {
   await fetchPosts();
 }
 
-function stars(rating = 0) {
-  const r = Math.max(0, Math.min(5, Math.round(rating)));
-  return Array.from({ length: 5 }).map((_, i) => `<i class="fa-solid fa-star ${i < r ? "on" : ""}"></i>`).join("");
-}
-
-async function loadFeaturedPage() {
-  const mentors = $("#featured-mentors");
-  const skills = $("#top-skills");
-  if (!mentors && !skills) return;
-
-  const mentorData = [
-    { name: "Neha Patel", skill: "Product Design", rating: 5, desc: "Clarity-driven design reviews & Figma coaching.", glow: true },
-    { name: "Imran Ali", skill: "Data Science", rating: 4, desc: "Portfolio projects, interview prep, and mentorship.", glow: false },
-    { name: "Keerthi R.", skill: "Guitar", rating: 5, desc: "Beginner-friendly lessons with weekly practice plans.", glow: false },
-  ];
-
-  const topSkillsData = [
-    { title: "Web Development", icon: "fa-solid fa-code", desc: "High demand swaps across the community." },
-    { title: "UI/UX Design", icon: "fa-solid fa-compass-drafting", desc: "Get feedback and improve your portfolio." },
-    { title: "Public Speaking", icon: "fa-solid fa-microphone", desc: "Practice, polish, and present with confidence." },
-  ];
-
-  mentors && (mentors.innerHTML = mentorData.map((m) => `
-    <article class="glass-panel featured-card ${m.glow ? "glow" : ""}">
-      <div class="featured-head">
-        <div class="avatar big">${escapeHtml(m.name.charAt(0))}</div>
-        <div>
-          <div class="featured-name">${escapeHtml(m.name)}</div>
-          <div class="featured-skill muted">${escapeHtml(m.skill)}</div>
-          <div class="stars">${stars(m.rating)}</div>
-        </div>
-      </div>
-      <p class="featured-desc">${escapeHtml(m.desc)}</p>
-      <div class="featured-actions">
-        <a class="btn-primary" href="browse.html">Connect</a>
-      </div>
-    </article>
-  `).join(""));
-
-  skills && (skills.innerHTML = topSkillsData.map((s) => `
-    <article class="glass-panel featured-mini">
-      <div class="mini-icon"><i class="${s.icon}"></i></div>
-      <div class="mini-title">${escapeHtml(s.title)}</div>
-      <div class="mini-sub muted">${escapeHtml(s.desc)}</div>
-    </article>
-  `).join(""));
-}
 
 async function loadOfferPage() {
   const form = $("#offer-form");
@@ -1685,12 +1632,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await Promise.all([
     loadCounts(),
     loadExplore(),
-    loadFeatured(),
     loadBrowse(),
     loadBrowseUsers(),
     loadExplorePage(),
     loadCommunityPage(),
-    loadFeaturedPage(),
     loadOfferPage(),
     loadProfilePage(),
     loadRequestsPage(),
