@@ -1500,6 +1500,14 @@ async function loadMessagesPage() {
     unsubMessages = api.onSnapshot(mq, (snap) => {
       const messages = snap.docs.map((d) => d.data());
       renderMessages(messages, user);
+
+      // Mark received messages as read
+      snap.docs.forEach(async (d) => {
+        const m = d.data();
+        if (m.senderId !== user.uid && m.read === false) {
+          await api.updateDoc(d.ref, { read: true });
+        }
+      });
     });
   }
 
@@ -1511,10 +1519,22 @@ async function loadMessagesPage() {
           const date = m.timestamp.seconds ? new Date(m.timestamp.seconds * 1000) : (m.timestamp.toDate ? m.timestamp.toDate() : new Date(m.timestamp));
           timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         }
+        
+        const isSent = m.senderId === user.uid;
+        let statusHtml = "";
+        if (isSent) {
+          statusHtml = m.read 
+            ? '<i class="fa-solid fa-check-double msg-status seen"></i>' 
+            : '<i class="fa-solid fa-check msg-status"></i>';
+        }
+
         return `
-          <div class="msg ${m.senderId === user.uid ? "sent" : "received"}">
+          <div class="msg ${isSent ? "sent" : "received"}">
             <div>${escapeHtml(m.text)}</div>
-            ${timeStr ? `<span class="msg-time">${timeStr}</span>` : ""}
+            <div class="msg-time">
+              ${timeStr}
+              ${statusHtml}
+            </div>
           </div>
         `;
       })
@@ -1542,6 +1562,7 @@ async function loadMessagesPage() {
         senderId: user.uid,
         text: text,
         timestamp: api.serverTimestamp(),
+        read: false,
       });
 
       await api.updateDoc(api.doc(db, "chats", activeChatId), {

@@ -880,7 +880,17 @@ code {
 .msg { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; position: relative; }
 .msg.sent { align-self: flex-end; background: var(--purple-1); color: white; border-bottom-right-radius: 2px; }
 .msg.received { align-self: flex-start; background: rgba(255, 255, 255, 0.08); color: var(--text); border-bottom-left-radius: 2px; }
-.msg-time { font-size: 0.75rem; opacity: 0.6; display: block; margin-top: 4px; text-align: right; }
+.msg-time { 
+  font-size: 0.75rem; 
+  opacity: 0.6; 
+  display: flex; 
+  align-items: center; 
+  justify-content: flex-end; 
+  gap: 4px; 
+  margin-top: 4px; 
+}
+.msg-status { font-size: 0.8rem; }
+.msg-status.seen { color: #34b7f1; opacity: 1; }
 
 .message-composer {
   padding: 16px 20px;
