@@ -1603,10 +1603,12 @@ async function loadMessagesPage() {
 
     if (unsubChats) unsubChats();
 
-    const q = api.query(api.collection(db, "chats"), api.where("participants", "array-contains", user.uid), api.orderBy("lastUpdated", "desc"));
+    const q = api.query(api.collection(db, "chats"), api.where("participants", "array-contains", user.uid));
     
     unsubChats = api.onSnapshot(q, (snap) => {
-      const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const chats = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.lastUpdated?.seconds || 0) - (a.lastUpdated?.seconds || 0));
       renderChatList(chats, user);
 
       const paramChatId = getParam("chat");
